@@ -164,3 +164,11 @@ plot_NV_heatmap <- function(celltype_NV, reorder_entries = TRUE, breaks = seq(0,
     Rowv = reorder_entries, Colv = reorder_entries
   )
 }
+
+get_study_id <- function(cluster_name) {
+  return(sapply(strsplit(cluster_name, "\\|"), head, 1))
+}
+
+get_cell_type <- function(cluster_name) {
+  return(sapply(strsplit(cluster_name, "\\|"), tail, 1))
+}
