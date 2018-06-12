@@ -37,7 +37,7 @@ MetaNeighborUS <- function(dat, study_id, cell_type, ranked = TRUE, n_centroids 
   if (n_centroids > 0) {
     centroids <- compute_centroids(dat, n_centroids)
   }
-  
+
   result <- create_result_matrix(colnames(dat))
   studies <- unique(study_id)
   for (study_A_index in seq_along(studies)) {
@@ -53,7 +53,7 @@ MetaNeighborUS <- function(dat, study_id, cell_type, ranked = TRUE, n_centroids 
       network <- build_network(candidates, voters, ranked = ranked)
       aurocs <- compute_aurocs(network)
       result[rownames(aurocs), colnames(aurocs)] <- aurocs
-      
+
       # study A votes for study B
       if (n_centroids > 0) {
         network <- build_network(get_subset(dat, study_B),
@@ -62,7 +62,7 @@ MetaNeighborUS <- function(dat, study_id, cell_type, ranked = TRUE, n_centroids 
       } else {
         network <- t(network)
       }
-      aurocs <- compute_aurocs(network) 
+      aurocs <- compute_aurocs(network)
       result[rownames(aurocs), colnames(aurocs)] <- aurocs
     }
   }
@@ -85,7 +85,7 @@ normalize_cols <- function(M, ranked = TRUE) {
 }
 
 compute_centroids <- function(dat, n_centroids = 1) {
-  result <- lapply(unique(colnames(dat)), 
+  result <- lapply(unique(colnames(dat)),
                    function(c) k_mean_centroids(dat[, colnames(dat) == c], c, n_centroids))
   return(do.call(cbind, result))
 }
@@ -112,10 +112,17 @@ build_network <- function(set_A, set_B, ranked = TRUE) {
   if (!ranked) { return(result) }
   A_labels <- rownames(result)
   B_labels <- colnames(result)
-  result <- matrix(rank(result), nrow = nrow(result))
+  result <- matrix(pseudo_rank(result), nrow = nrow(result))
   rownames(result) <- A_labels
   colnames(result) <- B_labels
   return(result/max(result))
+}
+
+pseudo_rank <- function(x, breaks = 1000) {
+  bins <- cut(x, seq(-1, 1, length = breaks))
+  num_per_bin <- table(bins)
+  rank_per_bin <- (cumsum(num_per_bin) + (num_per_bin+1)/2) / length(x)
+  return(rank_per_bin[as.numeric(bins)])
 }
 
 design_matrix <- function(cell_type) {
@@ -152,4 +159,4 @@ plot_NV_heatmap <- function(celltype_NV, reorder_entries = TRUE, breaks = seq(0,
     offsetRow=0.1, offsetCol=0.1, cexRow = 0.7, cexCol = 0.7,
     Rowv = reorder_entries, Colv = reorder_entries
   )
-}  
+}
