@@ -81,7 +81,7 @@ check_input <- function(dat, study_id, cell_type) {
 normalize_cols <- function(M, ranked = TRUE) {
   if (ranked) { M <- apply(M, 2, rank)}
   M <- t(M) - apply(M, 2, mean)
-  return(t(M) / apply(M, 1, norm, type = "2"))
+  return(t(M / apply(M, 1, norm, type = "2")))
 }
 
 compute_centroids <- function(dat, n_centroids = 1) {
@@ -143,6 +143,12 @@ compute_aurocs <- function(network) {
   return(result)
 }
 
+design_matrix <- function(cell_type) {
+  result <- model.matrix(~cell_type-1)
+  colnames(result) <- levels(as.factor(cell_type))
+  return(result)
+}
+
 create_result_matrix <- function(cell_type) {
   unique_cell_type <- unique(cell_type)
   result <- matrix(0, nrow = length(unique_cell_type), ncol = length(unique_cell_type))
@@ -162,3 +168,4 @@ plot_NV_heatmap <- function(celltype_NV, reorder_entries = TRUE, breaks = seq(0,
     offsetRow=0.1, offsetCol=0.1, cexRow = label_size, cexCol = label_size,
     Rowv = reorder_entries, Colv = reorder_entries
   )
+}
