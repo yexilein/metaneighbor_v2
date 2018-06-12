@@ -115,20 +115,15 @@ build_network <- function(set_A, set_B, ranked = TRUE) {
   result <- matrix(pseudo_rank(result), nrow = nrow(result))
   rownames(result) <- A_labels
   colnames(result) <- B_labels
-  return(result/max(result))
+  return(result)
 }
 
 pseudo_rank <- function(x, breaks = 1000) {
-  bins <- cut(x, seq(-1, 1, length = breaks))
+  bins <- cut(x, breaks)
   num_per_bin <- table(bins)
-  rank_per_bin <- (cumsum(num_per_bin) + (num_per_bin+1)/2) / length(x)
+  rank_per_bin <- (c(0, cumsum(num_per_bin)[-length(num_per_bin)]) +
+                   (num_per_bin+1)/2) / length(x)
   return(rank_per_bin[as.numeric(bins)])
-}
-
-design_matrix <- function(cell_type) {
-  result <- model.matrix(~cell_type-1)
-  colnames(result) <- levels(as.factor(cell_type))
-  return(result)
 }
 
 compute_aurocs <- function(network) {
