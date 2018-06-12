@@ -144,12 +144,15 @@ create_result_matrix <- function(cell_type) {
   return(result)
 }
 
-plot_NV_heatmap <- function(celltype_NV, reorder_entries = TRUE, breaks = seq(0, 1, length = 101)) {
+plot_NV_heatmap <- function(celltype_NV, reorder_entries = TRUE, breaks = seq(0, 1, length = 101), as_dist = FALSE, label_size = 0.3) {
   cols = rev(colorRampPalette(RColorBrewer::brewer.pal(11,"RdYlBu"))(100))
+  if (reorder_entries & as_dist) {
+     reorder_entries <- as.dendrogram(hclust(as.dist(1-celltype_NV)))
+  }
   gplots::heatmap.2(
     celltype_NV, margins=c(8,8), keysize=1, key.xlab="AUROC", key.title="NULL",
     trace = "none", density.info = "none", col = cols, breaks = breaks,
-    offsetRow=0.1, offsetCol=0.1, cexRow = 0.7, cexCol = 0.7,
+    offsetRow=0.1, offsetCol=0.1, cexRow = label_size, cexCol = label_size,
     Rowv = reorder_entries, Colv = reorder_entries
   )
-}  
+}
