@@ -79,7 +79,7 @@ check_input <- function(dat, study_id, cell_type) {
 }
 
 normalize_cols <- function(M, ranked = TRUE) {
-  if (ranked) { M <- apply(M, 2, rank)}
+  if (ranked) { M <- apply(M, 2, rank) }
   M <- t(M) - apply(M, 2, mean)
   return(t(M / apply(M, 1, norm, type = "2")))
 }
@@ -152,23 +152,47 @@ create_result_matrix <- function(cell_type) {
   return(result)
 }
 
-plot_NV_heatmap <- function(celltype_NV, reorder_entries = TRUE, breaks = seq(0, 1, length = 101), as_dist = FALSE, label_size = 0.3) {
-  cols = rev(colorRampPalette(RColorBrewer::brewer.pal(11,"RdYlBu"))(100))
-  if (reorder_entries & as_dist) {
-     reorder_entries <- as.dendrogram(hclust(as.dist(1-celltype_NV)))
-  }
-  gplots::heatmap.2(
-    celltype_NV, margins=c(8,8), keysize=1, key.xlab="AUROC", key.title="NULL",
-    trace = "none", density.info = "none", col = cols, breaks = breaks,
-    offsetRow=0.1, offsetCol=0.1, cexRow = label_size, cexCol = label_size,
-    Rowv = reorder_entries, Colv = reorder_entries
-  )
-}
-
 get_study_id <- function(cluster_name) {
   return(sapply(strsplit(cluster_name, "\\|"), head, 1))
 }
 
 get_cell_type <- function(cluster_name) {
   return(sapply(strsplit(cluster_name, "\\|"), tail, 1))
+}
+
+plot_NV_heatmap <- function(dat, reorder_entries = TRUE, breaks = seq(0, 1, length = 101), label_size = 0.3, norm = "") {
+  cols = rev(colorRampPalette(RColorBrewer::brewer.pal(11,"RdYlBu"))(100))
+  if (reorder_entries) {
+    reorder_entries <- as.dendrogram(hclust(as.dist(1-dat)))
+  }
+  if (norm == "rank") {
+     dat <- rank_normalize(dat)
+  } else if (norm == "log") {
+     dat <- log_normalize(dat)
+  }
+  gplots::heatmap.2(
+    dat, margins=c(8,8), keysize=1, key.xlab="", key.title="NULL",
+    trace = "none", density.info = "none", col = cols, breaks = breaks,
+    offsetRow=0.1, offsetCol=0.1, cexRow = label_size, cexCol = label_size,
+    Rowv = reorder_entries, Colv = reorder_entries
+  )
+}
+
+rank_normalize <- function(matrix_) {
+  row_labels <- rownames(result)
+  col_labels <- colnames(result)
+  result <- matrix(rank(matrix_), nrow = nrow(matrix_))
+  rownames(result) <- row_labels
+  colnames(result) <- col_labels
+  return(result / max(result))
+}
+
+log_normalize <- function(matrix_) {
+  result <- matrix_
+  high <- result[result <= 0.5]
+  low <- result[result > 0.5]
+  result[result <= 0.5] <- log(high * (1 - high))
+  result[result > 0.5] <- -log(low * (1 - low))
+  result <- result - min(result)
+  return(result / max(result))
 }
