@@ -160,7 +160,10 @@ get_cell_type <- function(cluster_name) {
   return(sapply(strsplit(cluster_name, "\\|"), tail, 1))
 }
 
-plot_NV_heatmap <- function(dat, reorder_entries = TRUE, breaks = seq(0, 1, length = 101), label_size = 0.3, norm = "") {
+plot_NV_heatmap <- function(
+  dat, reorder_entries = TRUE, breaks = seq(0, 1, length = 101),
+  label_size = 0.3, norm = "", row_colors, col_colors
+) {
   cols = rev(colorRampPalette(RColorBrewer::brewer.pal(11,"RdYlBu"))(100))
   if (reorder_entries) {
     reorder_entries <- as.dendrogram(hclust(as.dist(1-dat)))
@@ -171,11 +174,21 @@ plot_NV_heatmap <- function(dat, reorder_entries = TRUE, breaks = seq(0, 1, leng
      dat <- log_normalize(dat)
   }
   gplots::heatmap.2(
-    dat, margins=c(8,8), keysize=1, key.xlab="", key.title="NULL",
+    dat, margins = c(1,11),
+    key = FALSE, keysize = 1, key.xlab="AUROC", key.title="NULL",
+    labRow = NA, labCol = NA, 
     trace = "none", density.info = "none", col = cols, breaks = breaks,
-    offsetRow=0.1, offsetCol=0.1, cexRow = label_size, cexCol = label_size,
-    Rowv = reorder_entries, Colv = reorder_entries
+#    offsetRow=0.1, offsetCol=0.1, cexRow = label_size, cexCol = label_size,
+    Rowv = reorder_entries, Colv = reorder_entries, dendrogram = "row",
+    RowSideColors = row_colors$colors, ColSideColors = col_colors$colors
   )
+  par(lend = 1)
+  legend("topright", inset = c(0, .2),
+         legend = col_colors$legend,
+         col = col_colors$color_scale, pt.cex = 1, cex = 0.5, lwd = 10, bty="n")
+  legend("topright", inset = c(.05, .3),
+         legend = row_colors$legend,
+         col = row_colors$color_scale, cex = 0.5, lwd = 10, bty="n")
 }
 
 rank_normalize <- function(matrix_) {
