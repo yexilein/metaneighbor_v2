@@ -122,8 +122,13 @@ build_network <- function(set_A, set_B, ranked = TRUE) {
 }
 
 pseudo_rank <- function(x, breaks = 1000) {
-  bins <- cut(x, breaks)
-  num_per_bin <- table(bins)
+  m <- min(x)
+  M <- max(x)
+  bins <- floor((x-m) / ((1+1e-10)*(M-m)) * breaks) + 1
+  num_per_bin <- rep(0, breaks)
+  for (row in seq_len(nrow(x))) {
+    for (val in x[row,]) { num_per_bin[val] <- num_per_bin[val] }
+  }
   rank_per_bin <- (c(0, cumsum(num_per_bin)[-length(num_per_bin)]) +
                    (num_per_bin+1)/2) / length(x)
   return(rank_per_bin[as.numeric(bins)])
@@ -164,10 +169,10 @@ get_cell_type <- function(cluster_name) {
 }
 
 plot_NV_heatmap <- function(
-  dat, reorder_entries = TRUE, breaks = seq(0, 1, length = 101),
+  dat, reorder_entries = TRUE, breaks = seq(0, 1, length = 21),
   label_size = 0.3, norm = "", row_colors, col_colors
 ) {
-  cols = rev(colorRampPalette(RColorBrewer::brewer.pal(11,"RdYlBu"))(100))
+  cols = rev(colorRampPalette(RColorBrewer::brewer.pal(11,"RdYlBu"))(20))
   if (reorder_entries) {
     reorder_entries <- as.dendrogram(hclust(as.dist(1-dat)))
   }
@@ -178,7 +183,7 @@ plot_NV_heatmap <- function(
   }
   gplots::heatmap.2(
     dat, margins = c(1,11),
-    key = FALSE, keysize = 1, key.xlab="AUROC", key.title="NULL",
+    key = TRUE, keysize = 1, key.xlab="AUROC", key.title="NULL",
     labRow = NA, labCol = NA,
     trace = "none", density.info = "none", col = cols, breaks = breaks,
 #    offsetRow=0.1, offsetCol=0.1, cexRow = label_size, cexCol = label_size,
