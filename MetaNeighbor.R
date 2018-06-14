@@ -39,28 +39,26 @@
 #'                             bplot = TRUE)
 #' @export
 #'
-source("MetaNeighborUS.R")
-
 MetaNeighbor <- function(dat, study_id, cell_type, genesets) {
   check_input(dat, study_id, cell_type)
   check_genesets(dat, genesets)
-  dat <- normalize_cols(dat)
   colnames(dat) <- cell_type
 
   nv_mat <- matrix(0, ncol = length(unique(cell_type)), nrow = length(genesets))
   rownames(nv_mat) <- names(genesets)
-  colnames(nv_mat) <- colnames(levels(as.factor(cell_type)))
+  colnames(nv_mat) <- levels(as.factor(cell_type))
   for (l in seq_along(genesets)) {
       print(names(genesets)[l])
       geneset <- genesets[[l]]
       geneset_dat <- dat[!is.na(match(rownames(dat), geneset)), ]
+      geneset_dat <- normalize_cols(geneset_dat)
       aurocs <- c()
       for (study in unique(study_id)) {
         network <- build_network(geneset_dat[, study_id == study],
                                  geneset_dat[, study_id != study])
         aurocs <- rbind(aurocs, diag(compute_aurocs(network)))
       }
-      nv_mat[l,] <- rowMeans(aurocs)
+      nv_mat[l,] <- colMeans(aurocs)
   }
   return(nv_mat)
 }
@@ -73,7 +71,7 @@ check_genesets <- function(dat, genesets) {
       stop('No matching genes between genesets and gene_matrix')
 }
 
-bplot <- function(nv_mat)
+bplot <- function(nv_mat) {
     Celltype = rep(colnames(nv_mat),each=dim(nv_mat)[1])
     ROCValues = unlist(lapply(seq_len(dim(nv_mat)[2]), function(i) nv_mat[,i]))
     beanplot::beanplot(ROCValues ~ Celltype,
