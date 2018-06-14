@@ -33,20 +33,7 @@
 #' @export
 #'
 
-topHits <- function(cell_NV, dat, i = 1, study_id, cell_type, threshold=0.95){
-    
-    dat    <- SummarizedExperiment::assay(dat, i = i)
-    samples <- colnames(dat)
-    
-    #check obj contains study_id
-    if(length(study_id)!=length(samples)){
-        stop('study_id length does not match number of samples')
-    }
-    
-    #check obj contains cell_type
-    if(length(cell_type)!=length(samples)){
-        stop('cell_type length does not match number of samples')
-    } 
+topHits <- function(cell_NV, study_id, cell_type, threshold=0.95){
     
     pheno <- as.data.frame(cbind(study_id,cell_type), stringsAsFactors = FALSE)
     pheno$StudyID_CT <- paste(pheno$study_id, pheno$cell_type, sep = "|")
