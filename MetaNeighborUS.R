@@ -76,6 +76,9 @@ check_input <- function(dat, study_id, cell_type) {
   if(length(cell_type) != ncol(dat)){
     stop('cell_type length does not match number of samples')
   }
+  if(length(unique(study_id)) < 2){
+      stop('Found only 1 unique experiment_label. Please use data from more than 1 study!')
+  }
 }
 
 normalize_cols <- function(M, ranked = TRUE) {
@@ -103,7 +106,7 @@ k_mean_centroids <- function(dat, label, n_centroids) {
 }
 
 get_subset <- function(dat, study_name) {
-  study <- sapply(strsplit(colnames(dat), "\\|"), head, 1)
+  study <- get_study_id(colnames(dat))
   return(dat[, study == study_name])
 }
 
@@ -176,7 +179,7 @@ plot_NV_heatmap <- function(
   gplots::heatmap.2(
     dat, margins = c(1,11),
     key = FALSE, keysize = 1, key.xlab="AUROC", key.title="NULL",
-    labRow = NA, labCol = NA, 
+    labRow = NA, labCol = NA,
     trace = "none", density.info = "none", col = cols, breaks = breaks,
 #    offsetRow=0.1, offsetCol=0.1, cexRow = label_size, cexCol = label_size,
     Rowv = reorder_entries, Colv = reorder_entries, dendrogram = "row",
