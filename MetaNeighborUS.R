@@ -51,7 +51,8 @@ MetaNeighborUS <- function(dat, study_id, cell_type, ranked = TRUE, n_centroids 
         voters <- get_subset(dat, study_B)
       }
       network <- build_network(candidates, voters, ranked = ranked)
-      aurocs <- compute_aurocs(network)
+      votes <- compute_votes_from_network(network)
+      aurocs <- compute_aurocs(votes)
       result[rownames(aurocs), colnames(aurocs)] <- aurocs
 
       # study A votes for study B
@@ -142,16 +143,26 @@ pseudo_rank <- function(x, breaks = 1000, depth = 1000) {
   return(rank_per_bin[bins])
 }
 
-compute_aurocs <- function(network) {
-  voter_labels <- colnames(network)
-  candidate_labels <- rownames(network)
-  votes <- network %*% design_matrix(voter_labels) / rowSums(network)
+compute_aurocs <- function(votes) {
+  candidate_labels <- rownames(votes)
   positives <- design_matrix(candidate_labels)
   n_positives <- colSums(positives)
   n_negatives <- nrow(positives) - n_positives
   sum_of_positive_ranks <- t(positives) %*% apply(abs(votes), MARGIN = 2, FUN = rank)
   result <- (sum_of_positive_ranks / n_positives - (n_positives+1)/2) / n_negatives
   return(result)
+}
+
+compute_votes_from_network <- function(network) {
+  voter_labels <- colnames(network)
+  return(network %*% design_matrix(voter_labels) / rowSums(network))
+}
+
+compute_votes_without_network <- function(candidates, voters) {
+  voter_identity <- design_matrix(colnames(voters))
+  return((crossprod(candidates, voters %*% voter_identity) +
+          matrix(colSums(voter_identity), byrow = TRUE, nrow = ncol(candidates), ncol = ncol(voter_identity))) /
+         (crossprod(candidates, rowSums(voters)) + rep(ncol(voters), ncol(candidates))))
 }
 
 design_matrix <- function(cell_type) {
