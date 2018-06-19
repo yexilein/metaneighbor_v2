@@ -111,27 +111,39 @@ get_subset <- function(dat, study_name) {
 }
 
 build_network <- function(set_A, set_B, ranked = TRUE) {
-  result <- crossprod(set_A, set_B)
+  print(system.time(
+    result <- crossprod(set_A, set_B)
+  ))
   if (!ranked) { return(result) }
   A_labels <- rownames(result)
   B_labels <- colnames(result)
-  result <- matrix(pseudo_rank(result), nrow = nrow(result))
+  print(dim(result)); print(system.time(
+    result <- matrix(pseudo_rank(result), nrow = nrow(result))
+  ))
   rownames(result) <- A_labels
   colnames(result) <- B_labels
   return(result)
 }
 
-pseudo_rank <- function(x, breaks = 1000) {
+pseudo_rank <- function(x, breaks = 1000, depth = 1000) {
   m <- min(x)
   M <- max(x)
   bins <- floor((x-m) / ((1+1e-10)*(M-m)) * breaks) + 1
   num_per_bin <- rep(0, breaks)
-  for (row in seq_len(nrow(x))) {
-    for (val in x[row,]) { num_per_bin[val] <- num_per_bin[val] }
+  if (is.null(depth)) {
+    for (row in seq_len(nrow(bins))) {
+      for (val in bins[row,]) { num_per_bin[val] <- num_per_bin[val] + 1 }
+    }
+  } else {
+    indices <- sample.int(length(bins), breaks*depth)
+    for (i in indices) { 
+      val <- bins[i]
+      num_per_bin[val] <- num_per_bin[val] + 1
+    }
   }
   rank_per_bin <- (c(0, cumsum(num_per_bin)[-length(num_per_bin)]) +
-                   (num_per_bin+1)/2) / length(x)
-  return(rank_per_bin[as.numeric(bins)])
+                   (num_per_bin+1)/2) / sum(num_per_bin)
+  return(rank_per_bin[bins])
 }
 
 compute_aurocs <- function(network) {
