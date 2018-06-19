@@ -48,17 +48,20 @@ MetaNeighbor <- function(dat, study_id, cell_type, genesets) {
   rownames(nv_mat) <- names(genesets)
   colnames(nv_mat) <- levels(as.factor(cell_type))
   for (l in seq_along(genesets)) {
-      print(names(genesets)[l])
-      geneset <- genesets[[l]]
-      geneset_dat <- dat[!is.na(match(rownames(dat), geneset)), ]
-      geneset_dat <- normalize_cols(geneset_dat)
-      aurocs <- c()
-      for (study in unique(study_id)) {
-        network <- build_network(geneset_dat[, study_id == study],
-                                 geneset_dat[, study_id != study])
-        aurocs <- rbind(aurocs, diag(compute_aurocs(network)))
-      }
-      nv_mat[l,] <- colMeans(aurocs)
+    print(names(genesets)[l])
+    geneset <- genesets[[l]]
+    geneset_dat <- dat[!is.na(match(rownames(dat), geneset)), ]
+    # remove cells that end up having zero expressed genes
+    geneset_dat <- geneset_dat[, colSums(geneset_dat) > 0]
+    geneset_dat <- normalize_cols(geneset_dat)
+    aurocs <- c()
+    for (study in unique(study_id)) {
+      network <- build_network(geneset_dat[, study_id == study],
+                               geneset_dat[, study_id != study])
+      aurocs <- rbind(aurocs, diag(compute_aurocs(network)))
+      rm(network); gc()
+    }
+    nv_mat[l,] <- colMeans(aurocs)
   }
   return(nv_mat)
 }
@@ -69,15 +72,4 @@ check_genesets <- function(dat, genesets) {
   genes_in_matrix <- rownames(dat)
   if(length(intersect(genes_in_geneset,genes_in_matrix)) < 1)
       stop('No matching genes between genesets and gene_matrix')
-}
-
-bplot <- function(nv_mat) {
-    Celltype = rep(colnames(nv_mat),each=dim(nv_mat)[1])
-    ROCValues = unlist(lapply(seq_len(dim(nv_mat)[2]), function(i) nv_mat[,i]))
-    beanplot::beanplot(ROCValues ~ Celltype,
-                       border="NA",
-                       col="gray",
-                       ylab="AUROC",
-                       what=c(0,1,1,1),
-                       frame.plot = FALSE)
 }
