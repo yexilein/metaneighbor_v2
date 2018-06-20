@@ -95,9 +95,8 @@ check_input <- function(dat, study_id, cell_type) {
 
 normalize_cols <- function(M, ranked = TRUE) {
   if (ranked) { M <- apply(M, 2, rank) }
-  M <- M - matrix(apply(M, 2, mean), byrow = TRUE, nrow = nrow(M), ncol = ncol(M))
-  return(M / matrix(apply(M, 2, norm, type = "2"), byrow = TRUE,
-                          nrow = nrow(M), ncol = ncol(M)))
+  M <- scale(M, scale=FALSE)
+  return(sweep(M, 2, apply(M, 2, function(c) sqrt(crossprod(c,c))), FUN="/"))
 }
 
 compute_centroids <- function(dat, n_centroids = 1) {
@@ -171,9 +170,9 @@ compute_votes_from_network <- function(network) {
 
 compute_votes_without_network <- function(candidates, voters) {
   voter_identity <- design_matrix(colnames(voters))
-  return((crossprod(candidates, voters %*% voter_identity) +
-          matrix(colSums(voter_identity), byrow = TRUE, nrow = ncol(candidates), ncol = ncol(voter_identity))) /
-         (crossprod(candidates, rowSums(voters)) + rep(ncol(voters), ncol(candidates))))
+  raw_votes <- crossprod(candidates, voters %*% voter_identity)
+  return(sweep(raw_votes, 2, colSums(voter_identity), FUN = "+")) /
+         (c(crossprod(candidates, rowSums(voters))) + rep(ncol(voters), ncol(candidates)))
 }
 
 design_matrix <- function(cell_type) {
