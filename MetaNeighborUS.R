@@ -84,8 +84,9 @@ check_input <- function(dat, study_id, cell_type) {
 
 normalize_cols <- function(M, ranked = TRUE) {
   if (ranked) { M <- apply(M, 2, rank) }
-  M <- t(M) - apply(M, 2, mean)
-  return(t(M / apply(M, 1, norm, type = "2")))
+  M <- M - matrix(apply(M, 2, mean), byrow = TRUE, nrow = nrow(M), ncol = ncol(M))
+  return(M / matrix(apply(M, 2, norm, type = "2"), byrow = TRUE,
+                          nrow = nrow(M), ncol = ncol(M)))
 }
 
 compute_centroids <- function(dat, n_centroids = 1) {
