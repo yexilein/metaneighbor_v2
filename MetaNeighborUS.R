@@ -30,6 +30,15 @@
 #' @export
 #'
 
+MetaNeighborUSFast <- function(dat, study_id, cell_type) {
+  check_input(dat, study_id, cell_type)
+  dat <- normalize_cols(dat)
+  colnames(dat) <- paste(study_id, cell_type, sep = "|")
+  votes <- compute_votes_without_network(dat, dat)
+  return(compute_aurocs(votes))
+}
+
+
 MetaNeighborUS <- function(dat, study_id, cell_type, ranked = TRUE, n_centroids = 0) {
   check_input(dat, study_id, cell_type)
   dat <- normalize_cols(dat)
