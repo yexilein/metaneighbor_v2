@@ -34,21 +34,22 @@ MetaNeighborUS <- function(dat, study_id, cell_type, ranked = TRUE, n_centroids 
   check_input(dat, study_id, cell_type)
   dat <- normalize_cols(dat)
   colnames(dat) <- paste(study_id, cell_type, sep = "|")
+  studies <- unique(study_id)
   if (n_centroids > 0) {
     centroids <- compute_centroids(dat, n_centroids)
+    centroid_subsets <- find_subsets(get_study_id(colnames(centroids)), studies)
   }
+  data_subsets <- find_subsets(study_id, studies)
 
   result <- create_result_matrix(colnames(dat))
-  studies <- unique(study_id)
   for (study_A_index in seq_along(studies)) {
-    study_A <- studies[study_A_index]
-    for (study_B in studies[study_A_index:length(studies)]) {
+    for (study_B_index in study_A_index:length(studies)) {
       # study B votes for study A
-      candidates <- get_subset(dat, study_A)
+      candidates <- dat[, data_subsets[, study_A_index]]
       if (n_centroids > 0) {
-        voters <- get_subset(centroids, study_B)
+        voters <- centroids[, centroid_subsets[, study_B_index]]
       } else {
-        voters <- get_subset(dat, study_B)
+        voters <- dat[, data_subsets[, study_B_index]]
       }
       network <- build_network(candidates, voters, ranked = ranked)
       votes <- compute_votes_from_network(network)
@@ -63,7 +64,8 @@ MetaNeighborUS <- function(dat, study_id, cell_type, ranked = TRUE, n_centroids 
       } else {
         network <- t(network)
       }
-      aurocs <- compute_aurocs(network)
+      votes <- compute_votes_from_network(network)
+      aurocs <- compute_aurocs(votes)
       result[rownames(aurocs), colnames(aurocs)] <- aurocs
     }
   }
@@ -107,9 +109,8 @@ k_mean_centroids <- function(dat, label, n_centroids) {
   return(result)
 }
 
-get_subset <- function(dat, study_name) {
-  study <- get_study_id(colnames(dat))
-  return(dat[, study == study_name])
+find_subsets <- function(full_list, list_names) {
+  return(sapply(list_names, function(name) full_list == name))
 }
 
 build_network <- function(set_A, set_B, ranked = TRUE) {
