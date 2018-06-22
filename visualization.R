@@ -13,7 +13,7 @@ bplot <- function(nv_mat) {
 
 plot_NV_heatmap <- function(
   dat, reorder_entries = TRUE, breaks = seq(0, 1, length = 21),
-  label_size = 0.3, norm = "", row_colors, col_colors
+  label_size = 0.2, norm = "", row_colors, col_colors
 ) {
   cols = rev(colorRampPalette(RColorBrewer::brewer.pal(11,"RdYlBu"))(20))
   if (reorder_entries) {
@@ -25,11 +25,11 @@ plot_NV_heatmap <- function(
      dat <- log_normalize(dat)
   }
   gplots::heatmap.2(
-    dat, margins = c(1,11),
+    dat, margins = c(11,11),
     key = TRUE, keysize = 1, key.xlab="AUROC", key.title="NULL",
-    labRow = NA, labCol = NA,
+    labRow = NA, offsetRow=0.1, cexRow = label_size,
+    #labCol = NA, offsetCol=0.1, cexCol = label_size,
     trace = "none", density.info = "none", col = cols, breaks = breaks,
-#    offsetRow=0.1, offsetCol=0.1, cexRow = label_size, cexCol = label_size,
     Rowv = reorder_entries, Colv = reorder_entries, dendrogram = "row",
     RowSideColors = row_colors$colors, ColSideColors = col_colors$colors
   )
