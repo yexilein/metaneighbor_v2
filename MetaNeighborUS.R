@@ -34,8 +34,25 @@ MetaNeighborUSFast <- function(dat, study_id, cell_type) {
   check_input(dat, study_id, cell_type)
   dat <- normalize_cols(dat)
   colnames(dat) <- paste(study_id, cell_type, sep = "|")
-  votes <- compute_votes_without_network(dat, dat)
-  return(compute_aurocs(votes))
+  studies <- unique(study_id)
+  data_subsets <- find_subsets(study_id, studies)
+
+  result <- create_result_matrix(colnames(dat))
+  for (study_A_index in seq_along(studies)) {
+    study_A <- dat[, data_subsets[, study_A_index]]
+    for (study_B_index in study_A_index:length(studies)) {
+      study_B <- dat[, data_subsets[, study_B_index]]
+      # study B votes for study A
+      votes <- compute_votes_without_network(study_A, study_B)
+      aurocs <- compute_aurocs(votes)
+      result[rownames(aurocs), colnames(aurocs)] <- aurocs
+      # study A votes for study B
+      votes <- compute_votes_without_network(study_B, study_A)
+      aurocs <- compute_aurocs(votes)
+      result[rownames(aurocs), colnames(aurocs)] <- aurocs
+    }
+  }
+  return(result)
 }
 
 
