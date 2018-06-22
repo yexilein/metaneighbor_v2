@@ -29,68 +29,62 @@
 #'
 #' @export
 #'
-
-MetaNeighborUSFast <- function(dat, study_id, cell_type) {
+MetaNeighborUS <- function(dat, study_id, cell_type, ranked = TRUE, n_centroids = 0, fast = TRUE) {
   check_input(dat, study_id, cell_type)
   dat <- normalize_cols(dat)
   colnames(dat) <- paste(study_id, cell_type, sep = "|")
   studies <- unique(study_id)
   data_subsets <- find_subsets(study_id, studies)
-
-  result <- create_result_matrix(colnames(dat))
-  for (study_A_index in seq_along(studies)) {
-    study_A <- dat[, data_subsets[, study_A_index]]
-    for (study_B_index in study_A_index:length(studies)) {
-      study_B <- dat[, data_subsets[, study_B_index]]
-      # study B votes for study A
-      votes <- compute_votes_without_network(study_A, study_B)
-      aurocs <- compute_aurocs(votes)
-      result[rownames(aurocs), colnames(aurocs)] <- aurocs
-      # study A votes for study B
-      votes <- compute_votes_without_network(study_B, study_A)
-      aurocs <- compute_aurocs(votes)
-      result[rownames(aurocs), colnames(aurocs)] <- aurocs
-    }
-  }
-  return(result)
-}
-
-
-MetaNeighborUS <- function(dat, study_id, cell_type, ranked = TRUE, n_centroids = 0) {
-  check_input(dat, study_id, cell_type)
-  dat <- normalize_cols(dat)
-  colnames(dat) <- paste(study_id, cell_type, sep = "|")
-  studies <- unique(study_id)
   if (n_centroids > 0) {
     centroids <- compute_centroids(dat, n_centroids)
     centroid_subsets <- find_subsets(get_study_id(colnames(centroids)), studies)
   }
-  data_subsets <- find_subsets(study_id, studies)
 
   result <- create_result_matrix(colnames(dat))
   for (study_A_index in seq_along(studies)) {
+    study_A <- dat[, data_subsets[, study_A_index]]
+    if (n_centroids > 0) {
+      centroids_A <- centroids[, centroid_subsets[, study_A_index]]
+    }
     for (study_B_index in study_A_index:length(studies)) {
-      # study B votes for study A
-      candidates <- dat[, data_subsets[, study_A_index]]
+      study_B <- dat[, data_subsets[, study_B_index]]
       if (n_centroids > 0) {
-        voters <- centroids[, centroid_subsets[, study_B_index]]
-      } else {
-        voters <- dat[, data_subsets[, study_B_index]]
+        centroids_B <- centroids[, centroid_subsets[, study_B_index]]
       }
-      network <- build_network(candidates, voters, ranked = ranked)
-      votes <- compute_votes_from_network(network)
+
+      # study B votes for study A
+      if (fast) {
+        if (n_centroids > 0) {
+          votes <- compute_votes_without_network(study_A, centroids_B)
+        } else {
+          votes <- compute_votes_without_network(study_A, study_B)
+        }
+      } else {
+        if (n_centroids > 0) {
+          network <- build_network(study_A, centroids_B, ranked = ranked)
+        } else {
+          network <- build_network(study_A, study_B, ranked = ranked)
+        }
+        votes <- compute_votes_from_network(network)
+      }
       aurocs <- compute_aurocs(votes)
       result[rownames(aurocs), colnames(aurocs)] <- aurocs
 
       # study A votes for study B
-      if (n_centroids > 0) {
-        network <- build_network(get_subset(dat, study_B),
-                                 get_subset(centroids, study_A),
-                                 ranked = ranked)
+      if (fast) {
+        if (n_centroids > 0) {
+          votes <- compute_votes_without_network(study_B, centroids_A)
+        } else {
+          votes <- compute_votes_without_network(study_B, study_A)
+        }
       } else {
-        network <- t(network)
+        if (n_centroids > 0) {
+          network <- build_network(study_B, centroids_A, ranked = ranked)
+        } else {
+          network <- t(network)
+        }
+        votes <- compute_votes_from_network(network)
       }
-      votes <- compute_votes_from_network(network)
       aurocs <- compute_aurocs(votes)
       result[rownames(aurocs), colnames(aurocs)] <- aurocs
     }
