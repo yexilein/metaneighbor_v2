@@ -39,7 +39,7 @@
 #'                             bplot = TRUE)
 #' @export
 #'
-MetaNeighbor <- function(dat, study_id, cell_type, genesets) {
+MetaNeighbor <- function(dat, study_id, cell_type, genesets, fast = TRUE) {
   check_input(dat, study_id, cell_type)
   check_genesets(dat, genesets)
   colnames(dat) <- cell_type
@@ -56,10 +56,9 @@ MetaNeighbor <- function(dat, study_id, cell_type, genesets) {
     geneset_dat <- normalize_cols(geneset_dat)
     aurocs <- c()
     for (study in unique(study_id)) {
-      network <- build_network(geneset_dat[, study_id == study],
-                               geneset_dat[, study_id != study])
-      aurocs <- rbind(aurocs, diag(compute_aurocs(network)))
-      rm(network); gc()
+      votes <- compute_votes(geneset_dat[, study_id == study],
+                             geneset_dat[, study_id != study], fast)
+      aurocs <- rbind(aurocs, diag(compute_aurocs(votes)))
     }
     nv_mat[l,] <- colMeans(aurocs)
   }
@@ -72,4 +71,15 @@ check_genesets <- function(dat, genesets) {
   genes_in_matrix <- rownames(dat)
   if(length(intersect(genes_in_geneset,genes_in_matrix)) < 1)
       stop('No matching genes between genesets and gene_matrix')
+}
+
+compute_votes <- function(candidates, voters, fast) {
+  if (fast) {
+    return(compute_votes_without_network(candidates, voters))
+  } else {
+    network <- build_network(candidates, voters)
+    votes <- compute_votes_from_network(network)
+    rm(network); gc()
+    return(votes)
+  }
 }
