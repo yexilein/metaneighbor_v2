@@ -105,9 +105,13 @@ check_input <- function(dat, study_id, cell_type) {
 }
 
 normalize_cols <- function(M, ranked = TRUE) {
-  if (ranked) { M <- apply(M, 2, rank) }
-  M <- scale(M, scale=FALSE)
-  return(sweep(M, 2, apply(M, 2, function(c) sqrt(crossprod(c,c))), FUN="/"))
+  if (ranked) { 
+    M <- apply(M, 2, rank) - (nrow(M)+1)/2
+  } else {
+    M <- scale(M, scale=FALSE)
+  }
+  M <- scale(M, center=FALSE, apply(M, 2, function(c) sqrt(sum(c**2))))
+  return(M)
 }
 
 compute_centroids <- function(dat, n_centroids = 1) {
