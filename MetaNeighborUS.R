@@ -105,7 +105,7 @@ check_input <- function(dat, study_id, cell_type) {
 }
 
 normalize_cols <- function(M, ranked = TRUE) {
-  if (ranked) { 
+  if (ranked) {
     M <- apply(M, 2, rank) - (nrow(M)+1)/2
   } else {
     M <- scale(M, scale=FALSE)
@@ -191,8 +191,13 @@ compute_votes_without_network <- function(candidates, voters) {
 }
 
 design_matrix <- function(cell_type) {
-  result <- model.matrix(~cell_type-1)
-  colnames(result) <- levels(as.factor(cell_type))
+  factors <- levels(as.factor(cell_type))
+  if (length(factors) > 1) {
+    result <- model.matrix(~cell_type-1)
+  } else {
+    result <- matrix(1, nrow = length(cell_type), ncol = 1)
+  }
+  colnames(result) <- factors
   return(result)
 }
 
