@@ -17,7 +17,7 @@ plot_NV_heatmap <- function(
 ) {
   cols = rev(colorRampPalette(RColorBrewer::brewer.pal(11,"RdYlBu"))(20))
   if (reorder_entries) {
-    reorder_entries <- as.dendrogram(hclust(as.dist(1-dat)))
+    reorder_entries <- as.dendrogram(hclust(as.dist(1-dat), method="average"))
   }
   if (norm == "rank") {
      dat <- rank_normalize(dat)
@@ -28,7 +28,7 @@ plot_NV_heatmap <- function(
     dat, margins = c(11,11),
     key = TRUE, keysize = 1, key.xlab="AUROC", key.title="NULL",
     labRow = NA, offsetRow=0.1, cexRow = label_size,
-    #labCol = NA, offsetCol=0.1, cexCol = label_size,
+    labCol = NA, offsetCol=0.1, cexCol = label_size,
     trace = "none", density.info = "none", col = cols, breaks = breaks,
     Rowv = reorder_entries, Colv = reorder_entries, dendrogram = "row",
     RowSideColors = row_colors$colors, ColSideColors = col_colors$colors
